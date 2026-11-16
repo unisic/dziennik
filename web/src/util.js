@@ -59,6 +59,18 @@ export function holidays(y) {
     ].map(([day, name]) => ({ from: day, to: day, name })),
   ];
 }
+
+/** The school days from `from` to `to`, both included: weekdays outside the days off of `holidays`. */
+export function schoolDates(from, to) {
+  const years = new Map();
+  const out = [];
+  for (let d = from; d <= to; d = shift(d, 1)) {
+    const y = schoolYear(parse(d));
+    if (!years.has(y)) years.set(y, holidays(y));
+    if (parse(d).getDay() % 6 && !years.get(y).some((h) => h.from <= d && d <= h.to)) out.push(d);
+  }
+  return out;
+}
 /** "14 paź"; the year only for a date outside the current school year. */
 export function fmtDate(s) {
   if (!s) return '';

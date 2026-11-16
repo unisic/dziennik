@@ -43,6 +43,18 @@ zadania domowe (najpierw do zrobienia, najbliższy termin na górze; z oznaczeni
 wiadomości, ogłoszenia, uwagi, zachowanie (oceny, punkty z sumą za każdy semestr od punktów startowych jednostki
 szkoły z `Units`), klasa i nauczyciele (klasa, wychowawca, szkoła).
 
+Frekwencja zaczyna się od karty "Ile możesz opuścić": przy każdym przedmiocie z planu lekcji, ile jego lekcji do końca
+semestru albo roku (przełącznik) można jeszcze opuścić, żeby nieobecności (usprawiedliwione i nieusprawiedliwione) nie
+przekroczyły
+połowy, i na ilu trzeba być; powyżej połowy szkoła może nie klasyfikować ucznia z przedmiotu (art. 44k ustawy o
+systemie oświaty). Pasek pokazuje lekcje z obecnością, nieobecnością i te do końca, z kreską w połowie; na górze
+przedmioty z najmniejszym zapasem. Lekcje do końca to dni nauki od jutra do `EndFirstSemester` albo `EndSchoolYear` z
+`Classes` (bez `EndSchoolYear` do końca sierpnia) bez przerw z `holidays` w `web/src/util.js` i bez dni wolnych szkoły
+i klasy z terminarza, a w każdym dniu lekcje z planu na ten dzień tygodnia (pierwszy z trzech tygodni od bieżącego,
+który ma tego dnia lekcje; zastępstwo liczy się jako lekcja z planu). Bez `EndFirstSemester` jest tylko rok. Semestr
+wpisu frekwencji to jego pole `Semester`. Liczy przeglądarka (`schoolPlan` w `web/src/data.js`); serwer niczego nowego
+nie zapisuje. Plan zmieniający się co tydzień (tydzień A i B) liczy się jak tydzień, z którego wzięto dany dzień.
+
 Zapisy: wysyłanie wiadomości i odpowiedzi (odbiorcy z grup Librusa, bez rodziców), oznaczanie zadań domowych jako
 przeczytane (przy otwarciu) i wykonane. Wiadomość oznacza się jako przeczytaną przez jej pobranie;
 "Oznacz jako przeczytane" nad listą odebranych (widoczne, gdy coś jest nieprzeczytane) pyta o potwierdzenie i pobiera nieprzeczytane po 4 naraz. Załączniki wiadomości i zadań

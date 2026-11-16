@@ -2085,6 +2085,61 @@ button.chip {
   min-width: 3.4em;
 }
 
+/* Frekwencja, "Ile możesz opuścić": a subject and how many of its lessons can still be missed, under them a bar of
+   the lessons attended, missed and left with a mark at half, and what that means. */
+.skips li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-2) 0;
+}
+
+.skips li + li {
+  border-top: 1px solid var(--rule);
+}
+
+.skips strong {
+  font-size: 1.25rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.skips .meter {
+  grid-column: 1 / -1;
+  position: relative;
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--raised);
+  overflow: hidden;
+}
+
+.skips .present {
+  background: var(--ok);
+}
+
+.skips .absent {
+  background: var(--danger);
+}
+
+.skips .meter::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 calc(50% - 1px);
+  width: 2px;
+  background: var(--text);
+}
+
+.skips small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+}
+
+.skips .alert {
+  color: var(--danger);
+}
+
 .totals .alert {
   color: var(--danger);
   font-weight: 600;
@@ -2180,7 +2235,7 @@ button.chip {
 /* Lists inside cards */
 
 /* Zero specificity, so a list that is also a .card keeps the card's padding. */
-:where(.lessons, .entries, .totals, .events, .files, .feed) {
+:where(.lessons, .entries, .totals, .events, .files, .feed, .skips) {
   list-style: none;
   margin: 0;
   padding: 0;

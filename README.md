@@ -13,6 +13,8 @@ Hasła nie zapisuje, tokeny trzyma zaszyfrowane.
 - **Dziennik:** start, aktywność, oceny (zwykłe, punktowe, tekstowe i opisowe), plan na dzień albo tydzień z
   zastępstwami i przerwami, frekwencja, terminarz, zadania domowe, tematy lekcji, wiadomości, ogłoszenia, uwagi,
   zachowanie, klasa i nauczyciele.
+- **Frekwencja:** ile lekcji z każdego przedmiotu można jeszcze opuścić do końca semestru albo roku, żeby nieobecności
+  nie przekroczyły połowy, liczone z planu lekcji i terminarza.
 - **Oceny:** średnie także wtedy, gdy szkoła ich nie podaje albo wpisuje oceny jako opisowe, przy punktach procent
   zdobytych punktów, przy ocenach procentowych ich średnia, średnia ze wszystkich przedmiotów, symulator "co jeśli
   dostanę 5".

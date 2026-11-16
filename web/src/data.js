@@ -1,5 +1,5 @@
 import { api, synergia, lookup, byId } from './api.svelte.js';
-import { iso, fmtDate, person, plain, gradeTone, room, today, shift } from './util.js';
+import { iso, fmtDate, person, plain, gradeTone, room, today, shift, mondayOf, parse, schoolYear, schoolDates } from './util.js';
 import { t } from './i18n.js';
 
 /**
@@ -359,4 +359,55 @@ export async function monthEvents(login, year, month) {
     .filter((e) => e.date)
     .map((e) => ({ ...e, to: e.to && e.to !== e.date ? e.to : '' }))
     .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id));
+}
+
+/**
+ * The rest of the school year for the calculator on the Frekwencja page (Attendance.svelte): the school days from
+ * tomorrow to the class's end of year (`Classes`; the end of August when it is missing, the summer break having no
+ * school days) without the school's and the class's days off from the calendar, the subjects of each weekday in the
+ * timetable, and the end of the first semester when the class has one.
+ */
+export async function schoolPlan(login) {
+  const [c, cal, s] = await Promise.all([lookup(login, 'Classes'), lookup(login, 'Calendars'), lookup(login, 'Subjects')]);
+  const subjects = byId(s.Subjects);
+  const from = shift(today(), 1);
+  const end = c.Class?.EndSchoolYear?.slice(0, 10) ?? `${schoolYear(new Date()) + 1}-08-31`;
+  // A weekday's lessons come from the first of three weeks with any that day: a break or a day off leaves it empty.
+  async function weekdays() {
+    const plan = {};
+    for (let k = 0; k < 3 && Object.keys(plan).length < 5; k++) {
+      const table = (await synergia(login, `Timetables?weekStart=${shift(mondayOf(today()), 7 * k)}`)).Timetable ?? {};
+      for (const [date, slots] of Object.entries(table)) {
+        const day = parse(date).getDay();
+        // A lesson moved in from another slot is counted at that slot; a substitution counts as what the plan had there.
+        const lessons = (slots ?? [])
+          .flat()
+          .filter((l) => l && !(l.IsSubstitutionClass && !l.IsCanceled && ((l.OrgDate && l.OrgDate !== date) || (l.OrgLessonNo && String(l.OrgLessonNo) !== String(l.LessonNo)))))
+          .map((l) => (l.IsSubstitutionClass && l.OrgSubject?.Id ? l.OrgSubject : l.Subject))
+          .map((x) => subjects.get(String(x?.Id))?.Name ?? x?.Name ?? t('Inne'));
+        if (day % 6 && !plan[day] && lessons.length) plan[day] = lessons;
+      }
+    }
+    return plan;
+  }
+  async function daysOff() {
+    const id = cal.Calendars?.[0]?.Id;
+    const months = [];
+    for (let m = from.slice(0, 7); id && m <= end.slice(0, 7); m = shift(`${m}-01`, 31).slice(0, 7)) months.push(m);
+    const listed = await Promise.all(months.map((m) => synergia(login, `Calendars/${id}?month=${Number(m.slice(5))}&year=${m.slice(0, 4)}`)));
+    // A day off over two months is listed in both.
+    const refs = (kind) => [...new Map(listed.flatMap((r) => r.Calendar?.[kind] ?? []).map((x) => [x.Id, x])).values()];
+    const free = await Promise.all([
+      byIds(login, refs('SchoolFreeDays'), 'Calendars/SchoolFreeDays', 'SchoolFreeDays', 'SchoolFreeDay'),
+      byIds(login, refs('ClassFreeDays'), 'Calendars/ClassFreeDays', 'ClassFreeDays', 'ClassFreeDay'),
+    ]);
+    const off = new Set();
+    for (const f of free.flat()) {
+      const [a, b] = [f.DateFrom?.slice(0, 10), (f.DateTo ?? f.DateFrom)?.slice(0, 10)];
+      if (a && b) for (const d of schoolDates(a > from ? a : from, b < end ? b : end)) off.add(d);
+    }
+    return off;
+  }
+  const [plan, off] = await Promise.all([weekdays(), daysOff()]);
+  return { half: c.Class?.EndFirstSemester?.slice(0, 10) ?? null, plan, dates: schoolDates(from, end).filter((d) => !off.has(d)) };
 }

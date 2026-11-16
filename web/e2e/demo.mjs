@@ -135,7 +135,9 @@ await js(`${forcedBox}.click()`);
 await js(`location.hash = '#/oceny'`);
 check('third child: descriptive 1 to 6 grades count once the settings say so', !third[5].includes('śr.') && (await until(`${loaded} && ${row('Informatyka')}.includes('śr.')`)), [third[5], await js(row('Informatyka'))]);
 await js(`location.hash = '#/frekwencja'`);
-check("third child: the school's own kind of attendance", await until(`${loaded} && document.querySelector('main').innerText.includes('Zwolnienie na zawody')`));
+// textContent: the entry sits below the calculator, off screen, and rows off screen are not laid out
+// (content-visibility), so innerText leaves them out.
+check("third child: the school's own kind of attendance", await until(`${loaded} && document.querySelector('main').textContent.includes('Zwolnienie na zawody')`));
 await js(`location.hash = '#/zachowanie'`);
 await until(`${loaded} && document.querySelectorAll('main .entries li').length > 0`);
 const points = await js(`[document.querySelector('main section:last-of-type h2')?.textContent, ...[...document.querySelectorAll('main .entries li')].map((li) => li.textContent.replace(/\\s+/g, ' ').trim())]`);

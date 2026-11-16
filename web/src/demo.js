@@ -467,7 +467,13 @@ function synergia(d, method, rest, query, body) {
       { Id: 3, Name: 'Spóźnienie', ValueFrom: -2, ValueTo: -2 }, { Id: 4, Name: 'Praca na rzecz klasy', ValueFrom: 5, ValueTo: 10 },
     ]),
     'BehaviourGrades/Points/Comments': list('Comments', d.points.filter((p) => p.text).map((p) => ({ Id: p.Id, Grade: { Id: p.Id }, Text: p.text }))),
-    Classes: { Class: { Id: 1, Number: s.cls[0], Symbol: s.cls[1], ClassTutors: [{ Id: s.tutor }], Unit: { Id: 1 } } },
+    Classes: {
+      Class: {
+        Id: 1, Number: s.cls[0], Symbol: s.cls[1], ClassTutors: [{ Id: s.tutor }], Unit: { Id: 1 },
+        // The semesters of `semester` above.
+        EndFirstSemester: `${schoolYear(parse(T)) + 1}-01-31`, EndSchoolYear: `${schoolYear(parse(T)) + 1}-06-30`,
+      },
+    },
     Units: list('Units', [{ Id: 1, BehaviourGradesSettings: { StartPoints: { Semester1: s.start ?? 0 } } }]),
     Schools: { School: { Id: 1, Name: s.school ?? 'Szkoła Podstawowa nr 7 im. Jana Brzechwy', Street: 'Lipowa', BuildingNumber: '12', Town: 'Kraków' } },
   };

@@ -381,13 +381,39 @@ await lift();
 check('swipe: in the day view it steps one school day, from Friday past the weekend',
   (await rest()) && (await until(`document.querySelector('main section h2').innerText.startsWith('poniedziałek')`)) && (await weeks()) === count + 1, await text('main section h2'));
 
+const trips = async () => (await log()).filter((l) => l.includes('/Calendars/ClassFreeDays/2')).length;
+const tripsBefore = await trips();
 await go('#/frekwencja', `document.querySelectorAll('main .totals').length === 2`);
-const totals = await rows('main section:nth-of-type(1) .totals li');
+// Counted from the end: the calculator's card above them comes when the plan and the calendar are in.
+const totals = await rows('main section:nth-last-of-type(3) .totals li');
 check('attendance: percentage, and unexcused absences counted apart from excused ones', JSON.stringify(totals) === JSON.stringify(
   ['nb Nieusprawiedliwione 1', 'u Usprawiedliwione 1', 'sp Spóźnienia 1']) && (await text('main .figure'))[0] === '60,0% obecności' &&
   JSON.stringify(await text('main .totals strong.alert')) === JSON.stringify(['1']), totals);
-const per = await rows('main section:nth-of-type(2) .totals li');
+const per = await rows('main section:nth-last-of-type(2) .totals li');
 check('attendance: per subject, the unexcused first', JSON.stringify(per) === JSON.stringify(['Matematyka 1 nieuspr. 50,0%', 'Inne 1 uspr. 66,7%']), per);
+// The plan has Matematyka, Język polski and Fizyka every weekday, but on Wednesday Fizyka substitutes for Język polski.
+const calc = () => js(`(() => { const card = document.querySelector('main section:has(.skips)'); return {
+  periods: [...card.querySelectorAll('.segmented button')].map((b) => b.textContent),
+  days: card.querySelector(':scope > p').textContent,
+  rows: [...card.querySelectorAll('.skips li')].map((li) => [li.children[0].textContent, Number(li.children[1].textContent), li.querySelector('small').textContent.replace(/\\s+/g, ' ')]) }; })()`);
+await until(`document.querySelector('main .skips li')`);
+const skip = await calc();
+const left = (name) => skip.rows.find(([n]) => n === name)?.[2].match(/^musisz być na (\d+) z (\d+)$/)?.slice(1).map(Number) ?? [];
+const [math, polish, physics] = ['Matematyka', 'Język polski', 'Fizyka'].map(left);
+const days = Number(skip.days.match(/^\d+/)?.[0]);
+// "Inne" has entries but no lessons in the plan, so nothing left to count.
+check('attendance calculator: the least to spare first, only subjects still in the plan', JSON.stringify(skip.rows.map(([n]) => n)) === JSON.stringify(['Fizyka', 'Matematyka', 'Język polski']), skip);
+check('attendance calculator: lessons left from the plan, a substitution counted as the planned lesson', math[1] === days && polish[1] + physics[1] === 2 * days && physics[1] < days, skip);
+// Matematyka so far: 2 lessons, 1 missed. Missing k of the n left keeps absences at most half while 1 + k <= (2 + n) / 2.
+const mathSkip = skip.rows.find(([n]) => n === 'Matematyka')?.[1];
+check('attendance calculator: how many can be missed and how many attended', mathSkip === Math.floor((2 + days) / 2) - 1 && mathSkip + math[0] === days, skip);
+check('attendance calculator: the class\'s days off come from the calendar', (await trips()) > tripsBefore);
+if (skip.periods.length === 2) {
+  await clickText('main section:has(.skips) .segmented button', 'Rok');
+  await until(`document.querySelector('main section:has(.skips) [aria-pressed=true]').textContent === 'Rok'`);
+  const year = await calc();
+  check('attendance calculator: the year counts on past the semester', Number(year.days.match(/^\d+/)?.[0]) > days, [skip.days, year.days]);
+}
 const marks = () => js(`[...document.querySelectorAll('.entries .chip')].map((c) => c.classList[2] + ':' + c.textContent)`);
 check('attendance: presence filtered, every kind has its own mark', JSON.stringify(await marks()) === JSON.stringify(['g5:u', 'blue:sp', 'g1:nb']), await marks());
 await js(`document.querySelector('.filter button[title="Nieusprawiedliwione"]').click()`);
