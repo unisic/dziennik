@@ -1,6 +1,6 @@
 <script>
   import { untrack } from 'svelte';
-  import { synergia, lookup, write, message, resource, drafts } from './api.svelte.js';
+  import { synergia, lookup, write, message, resource, drafts, prefill } from './api.svelte.js';
   import { person, short } from './util.js';
   import Async from './Async.svelte';
   import Icon from './Icon.svelte';
@@ -47,9 +47,19 @@
   }, () => (replyId ? undefined : `book/${login}`));
 
   // The parent remounts this form per message, so the starting subject is read once.
-  let subject = $state(untrack(() => (original ? `Re: ${original.title}` : '')));
-  let body = $state('');
+  const given = untrack(() => (original || replyId ? null : prefill.take()));
+  let subject = $state(untrack(() => (original ? `Re: ${original.title}` : (given?.subject ?? ''))));
+  let body = $state(given?.body ?? '');
   let picked = $state([]);
+  /** Names a set-up message is for, picked once the book is in. */
+  let wanted = given?.to ?? [];
+  $effect(() => {
+    if (!wanted.length || !book.data) return;
+    const words = (s) => String(s).toLowerCase().split(/\s+/).filter(Boolean);
+    const named = (label) => wanted.some((name) => words(name).every((w) => words(label).includes(w)));
+    picked = [...new Set(book.data.flatMap((s) => s.people).filter((p) => named(p.Label)).map((p) => String(p.Id)))];
+    wanted = [];
+  });
   let filter = $state('');
   let busy = $state(false);
   let error = $state('');

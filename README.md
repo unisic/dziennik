@@ -14,7 +14,8 @@ Hasła nie zapisuje, tokeny trzyma zaszyfrowane.
   zastępstwami i przerwami, frekwencja, terminarz, zadania domowe, tematy lekcji, wiadomości, ogłoszenia, uwagi,
   zachowanie, klasa i nauczyciele.
 - **Frekwencja:** ile lekcji z każdego przedmiotu można jeszcze opuścić do końca semestru albo roku, żeby nieobecności
-  nie przekroczyły połowy, liczone z planu lekcji i terminarza.
+  nie przekroczyły połowy, liczone z planu lekcji i terminarza; kalendarz miesiąca z lekcjami każdego dnia; kreator usprawiedliwienia
+  jako wiadomości do wychowawcy.
 - **Oceny:** średnie także wtedy, gdy szkoła ich nie podaje albo wpisuje oceny jako opisowe, przy punktach procent
   zdobytych punktów, przy ocenach procentowych ich średnia, średnia ze wszystkich przedmiotów, symulator "co jeśli
   dostanę 5".
@@ -26,7 +27,7 @@ Hasła nie zapisuje, tokeny trzyma zaszyfrowane.
   zrzutów ekranu.
 - **Na co dzień:** kilku uczniów na jednym koncie, tryb offline z ostatnimi danymi, instalacja na ekranie telefonu.
 
-Nieobsługiwane: oceny opisowe z nowego modułu, usprawiedliwienia, usuwanie wiadomości, posiłki, przedszkola.
+Nieobsługiwane: oceny opisowe z nowego modułu, moduł usprawiedliwień Librusa, usuwanie wiadomości, posiłki, przedszkola.
 
 ## Uruchomienie
 

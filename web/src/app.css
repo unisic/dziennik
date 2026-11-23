@@ -1749,6 +1749,52 @@ section.card.today > h2 {
   }
 }
 
+/* Frekwencja: a day's lessons as bars in their order, as in the plan; a mark other than presence in its tint. */
+.month .bars {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.month .bars > span {
+  height: 4px;
+  border-radius: 2px;
+  background: currentColor;
+}
+
+.month .bars > .present {
+  background: var(--line);
+}
+
+.month .bars > .g0 {
+  color: var(--g0-text);
+}
+
+/* The excuse: days and their lessons to tick, each day's reason under them, the lines as they will be sent. */
+.excuse ul {
+  list-style: none;
+  margin: 0 0 var(--space-3);
+  padding: 0;
+}
+
+.excuse .sub {
+  padding-left: calc(20px + var(--space-3));
+}
+
+.excuse select,
+.excuse input:not([type='checkbox']) {
+  margin-bottom: var(--space-2);
+}
+
+.excuse pre {
+  margin: 0 0 var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--raised);
+  font: inherit;
+  white-space: pre-wrap;
+}
+
 /* The next three entries as small tiles in a row, over the month; a tile opens its day in it. */
 .soon {
   margin-bottom: var(--space-4);

@@ -41,6 +41,18 @@ export const update = $state({ ready: false });
  */
 export const drafts = $state({ open: 0 });
 
+/** A new message set up on another screen (an excuse, Attendance.svelte) for the next form to start from, taken once. */
+let next = null;
+export const prefill = {
+  /** `to`: the receivers' names, picked in the book by their words in any order. */
+  set: (message) => (next = message),
+  take: () => {
+    const message = next;
+    next = null;
+    return message;
+  },
+};
+
 /**
  * Bumping `tick` makes everything on screen load again: the refresh button does it, and so does coming back to
  * the app after a pause. An installed app has no reload button and can sit in the background for days.

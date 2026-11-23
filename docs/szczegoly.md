@@ -54,6 +54,22 @@ i klasy z terminarza, a w każdym dniu lekcje z planu na ten dzień tygodnia (pi
 który ma tego dnia lekcje; zastępstwo liczy się jako lekcja z planu). Bez `EndFirstSemester` jest tylko rok. Semestr
 wpisu frekwencji to jego pole `Semester`. Liczy przeglądarka (`schoolPlan` w `web/src/data.js`); serwer niczego nowego
 nie zapisuje. Plan zmieniający się co tydzień (tydzień A i B) liczy się jak tydzień, z którego wzięto dany dzień.
+Pod podsumowaniem jest kalendarz frekwencji: miesiąc jak w terminarzu (strzałki, przesunięcie palcem, "Dziś"), a w
+każdym dniu jego lekcje jak w planie, paskami w kolejności numerów: obecność szara, inne wpisy w kolorze swojego znaczka.
+Wybrany dzień pokazuje pod miesiącem listę lekcji z przedmiotem, numerem i znaczkiem. Kalendarz otwiera się na bieżącym
+miesiącu, a po ostatnim wpisie roku (np. w wakacje) na miesiącu tego wpisu. Rysuje go przeglądarka z tych samych
+`Attendances`, bez nowych zapytań.
+
+Pod kalendarzem, gdy są nieobecności nieusprawiedliwione, stoi kreator usprawiedliwienia (`src/excuse.js` składa linie):
+zaznacza się dni, w nich lekcje (na start wszystkie nieusprawiedliwione tego dnia) i powód z listy (choroba, złe
+samopoczucie, wizyta u lekarza, sprawy rodzinne, wyjazd, inne: wtedy własnymi słowami, do 200 znaków). Dzień opuszczony w całości to linia "02.10.2026 - choroba",
+w części "02.10.2026, lekcje 1-2, 4 - choroba", a dni w całości po kolei z jednym powodem łączą się w
+"06.11.2026 - 09.11.2026 - choroba" (po kolei: bez dnia nauki pomiędzy; weekend i przerwa, bez wpisów frekwencji, nie
+przerywają). "Napisz do wychowawcy" otwiera nową wiadomość z tematem "Usprawiedliwienie nieobecności", tymi liniami w
+treści i wychowawcą (`Classes.ClassTutors`, odszukanym w odbiorcach po imieniu i nazwisku) jako odbiorcą. Nic nie
+wychodzi samo: wiadomość wysyła się zwykłym "Wyślij", po przeczytaniu i poprawkach. Treść jest po polsku w każdym
+języku interfejsu, bo trafia do szkoły. To zwykła wiadomość, nie moduł usprawiedliwień Librusa, więc nieobecność zmienia
+dopiero wychowawca.
 
 Zapisy: wysyłanie wiadomości i odpowiedzi (odbiorcy z grup Librusa, bez rodziców), oznaczanie zadań domowych jako
 przeczytane (przy otwarciu) i wykonane. Wiadomość oznacza się jako przeczytaną przez jej pobranie;
@@ -72,7 +88,7 @@ Ograniczenia: jedna wiadomość trafia do osób z jednej grupy (tak działa form
 adresatów", bez załączników, bez cytatu w odpowiedzi; z folderu widać tylko pierwszą stronę. Zadania domowe takiego
 konta: sam komunikat.
 
-Nieobsługiwane: oceny opisowe z nowego modułu (`Auth/DescriptiveGradingSystem`), usprawiedliwienia, usuwanie
+Nieobsługiwane: oceny opisowe z nowego modułu (`Auth/DescriptiveGradingSystem`), moduł usprawiedliwień Librusa, usuwanie
 wiadomości, posiłki, przedszkola.
 
 ## Powiadomienia

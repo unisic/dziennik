@@ -1,9 +1,12 @@
 <script>
-  import { synergia, lookup, resource, byId } from './api.svelte.js';
+  import { synergia, lookup, resource, byId, prefill } from './api.svelte.js';
   import { schoolPlan } from './data.js';
-  import { fmtDate, fmtPercent, choiceOf, ATTENDANCE, parse, today, plural } from './util.js';
+  import { fmtDate, fmtDay, fmtPercent, choiceOf, ATTENDANCE, parse, today, shift, plural } from './util.js';
   import Async from './Async.svelte';
-  import { t } from './i18n.js';
+  import Icon from './Icon.svelte';
+  import { swipe } from './swipe.js';
+  import { lines } from './excuse.js';
+  import { t, locale } from './i18n.js';
 
   let { login } = $props();
 
@@ -52,7 +55,15 @@
       per.set(x.subject, v);
     }
     const absent = all.filter((x) => ABSENCES.has(x.std)).length;
+    // Each day's lessons in their order, presence included, for the calendar.
+    const days = new Map();
+    for (const x of [...all].sort((p, q) => Number(p.no) - Number(q.no))) (days.get(x.date) ?? days.set(x.date, []).get(x.date)).push(x);
+    const dates = [...days.keys()].sort();
     return {
+      days,
+      dates,
+      last: dates.at(-1),
+      missed: dates.filter((d) => days.get(d).some((x) => x.std === UNEXCUSED)).reverse(),
       total: pct(absent, all.length),
       kinds: [...kinds.values()].filter((k) => k.n || ABSENCES.has(k.std)),
       subjects: [...per]
@@ -94,6 +105,67 @@
   let period = $state(0);
   /** The kind the list of entries is narrowed to, or null for all of them. */
   let only = $state(null);
+
+  const todayIso = today();
+  const ym = (d) => ({ y: Number(d.slice(0, 4)), m: Number(d.slice(5, 7)) });
+  const WEEKDAYS = [t('Pn'), t('Wt'), t('Śr'), t('Cz'), t('Pt'), t('So'), t('Nd')];
+  /** The calendar's month as picked; none: this one, or the last with entries once the school year is over. */
+  let month = $state(null);
+  const last = $derived(data.data?.last);
+  const shown = $derived(month ?? ym(last && last < todayIso ? last : todayIso));
+  /** The day whose lessons are listed under the month. */
+  let picked = $state(null);
+  const cal = $derived.by(() => {
+    const first = `${shown.y}-${String(shown.m).padStart(2, '0')}-01`;
+    const days = Array.from({ length: new Date(shown.y, shown.m, 0).getDate() }, (_, i) => shift(first, i));
+    // Monday first: the empty cells before the 1st and after the last day.
+    const lead = (parse(first).getDay() + 6) % 7;
+    return { days, lead, trail: (7 - ((lead + days.length) % 7)) % 7, label: parse(first).toLocaleDateString(locale, { month: 'long', year: 'numeric' }) };
+  });
+  function move(delta) {
+    const d = new Date(shown.y, shown.m - 1 + delta, 1);
+    month = { y: d.getFullYear(), m: d.getMonth() + 1 };
+    picked = null;
+  }
+  const dayLabel = (d, list) => [fmtDay(d), ...list.filter((e) => e.std !== PRESENCE).map((e) => `${e.subject}: ${e.name}`)].join(', ');
+
+  /** The message's own words, in Polish whatever the screen's language: it goes to a Polish school. */
+  const REASONS = [
+    ['choroba', t('choroba')],
+    ['złe samopoczucie', t('złe samopoczucie')],
+    ['wizyta u lekarza', t('wizyta u lekarza')],
+    ['sprawy rodzinne', t('sprawy rodzinne')],
+    ['wyjazd', t('wyjazd')],
+    ['inne', t('inne')],
+  ];
+  /** The excuse being put together: per day ticked, its reason (`other`: the words typed for "inne") and lessons. */
+  let excuse = $state({});
+  /** The excuse with each "inne" in the words typed for it. */
+  const worded = (excuse) =>
+    Object.fromEntries(Object.entries(excuse).map(([date, x]) => [date, { ...x, reason: x.reason === 'inne' ? x.other.trim() || 'inne' : x.reason }]));
+  function tick(date, nos, on) {
+    if (on) excuse[date] = { reason: REASONS[0][0], other: '', nos };
+    else delete excuse[date];
+  }
+  function tickLesson(date, no, on) {
+    const x = excuse[date];
+    x.nos = on ? [...x.nos, no] : x.nos.filter((n) => n !== no);
+  }
+  /** Opens a new message to the class tutor with the excuse in it, to be read over and sent by hand. */
+  async function writeExcuse(text) {
+    // Without the class or the people the message opens with no receiver, to be picked in the form.
+    const [c, u] = await Promise.all([lookup(login, 'Classes'), lookup(login, 'Users')]).catch(() => [{}, {}]);
+    const users = byId(u.Users ?? []);
+    const to = (c.Class?.ClassTutors ?? []).map((x) => users.get(String(x.Id))).filter(Boolean).map((p) => `${p.FirstName} ${p.LastName}`);
+    prefill.set({ subject: 'Usprawiedliwienie nieobecności', body: `Dzień dobry,\nproszę o usprawiedliwienie nieobecności:\n\n${text}\n\nZ poważaniem`, to });
+    location.hash = '#/wiadomosci/nowa';
+  }
+
+  let below = $state();
+  // On a phone the picked day is under the month, out of sight: scrolled up just enough to be seen.
+  $effect(() => {
+    if (picked) below?.scrollIntoView({ block: 'nearest' });
+  });
 </script>
 
 <Async r={data}>
@@ -144,6 +216,93 @@
       </ul>
       {#if !d.total}<p class="muted">{t('Brak wpisów frekwencji.')}</p>{/if}
     </section>
+    {#if d.days.size}
+      <!-- Not a section: the tests count the cards from the end of the page. -->
+      <div>
+        <h2 class="section">{t('Kalendarz')}</h2>
+        <div class="pager">
+          <button class="icon-btn" onclick={() => move(-1)} aria-label={t('Poprzedni miesiąc')} title={t('Poprzedni miesiąc')}><Icon name="left" /></button>
+          <h3 class="range" aria-live="polite">{cal.label}</h3>
+          <button class="icon-btn" onclick={() => move(1)} aria-label={t('Następny miesiąc')} title={t('Następny miesiąc')}><Icon name="right" /></button>
+          <button class="secondary now" onclick={() => ((month = ym(todayIso)), (picked = null))} disabled={shown.y === ym(todayIso).y && shown.m === ym(todayIso).m && !picked}
+            >{t('Dziś')}</button
+          >
+        </div>
+        <div class="card month" use:swipe={{ prev: () => move(-1), next: () => move(1) }}>
+          <div class="weekdays" aria-hidden="true">
+            {#each WEEKDAYS as w (w)}<span>{w}</span>{/each}
+          </div>
+          <div class="grid" role="group" aria-label={t('Dni miesiąca')}>
+            {#each { length: cal.lead }}<span></span>{/each}
+            {#each cal.days as day (day)}
+              {@const list = d.days.get(day) ?? []}
+              <button
+                class:weekend={parse(day).getDay() % 6 === 0}
+                aria-pressed={day === picked}
+                aria-current={day === todayIso ? 'date' : undefined}
+                aria-label={dayLabel(day, list)}
+                onclick={() => (picked = day === picked ? null : day)}
+              >
+                <span class="num">{parse(day).getDate()}</span>
+                <span class="bars">{#each list as e (e.id)}<span class={e.std === PRESENCE ? 'present' : tone(e.std)}></span>{/each}</span>
+              </button>
+            {/each}
+            {#each { length: cal.trail }}<span></span>{/each}
+          </div>
+        </div>
+        {#if picked}
+          {@const list = d.days.get(picked) ?? []}
+          <div class="card" bind:this={below}>
+            <h2 class="day">{fmtDay(picked)}</h2>
+            {#if list.length}
+              <ul class="entries">
+                {#each list as e (e.id)}
+                  <li>
+                    <span class="chip static {e.std === PRESENCE ? '' : tone(e.std)}" title={e.name}>{e.short}</span>
+                    <span>{e.subject}<small class="muted">{t('lekcja {no}', { no: e.no })}</small></span>
+                    <span class="vh">{e.name}</span>
+                  </li>
+                {/each}
+              </ul>
+            {:else}
+              <p class="muted">{t('Tego dnia nic nie ma.')}</p>
+            {/if}
+          </div>
+        {/if}
+      </div>
+    {/if}
+    {#if d.missed.length}
+      {@const text = lines(d, worded(excuse))}
+      <div class="card excuse">
+        <h2>{t('Usprawiedliwienie')}</h2>
+        <p class="muted">{t('Zaznacz nieobecności nieusprawiedliwione i powód: aplikacja napisze z nich wiadomość do wychowawcy.')}</p>
+        <ul>
+          {#each d.missed as date (date)}
+            {@const own = d.days.get(date).filter((e) => e.std === UNEXCUSED)}
+            <li>
+              <label class="check"><input type="checkbox" checked={!!excuse[date]} onchange={(e) => tick(date, own.map((x) => x.no), e.currentTarget.checked)} />{fmtDay(date)}</label>
+              {#if excuse[date]}
+                {#each own as e (e.id)}
+                  <label class="check sub"
+                    ><input type="checkbox" checked={excuse[date].nos.includes(e.no)} onchange={(x) => tickLesson(date, e.no, x.currentTarget.checked)} />{t('lekcja {no}', { no: e.no })}, {e.subject}</label
+                  >
+                {/each}
+                <select aria-label={t('Powód: {day}', { day: fmtDay(date) })} bind:value={excuse[date].reason}>
+                  {#each REASONS as [v, label] (v)}<option value={v}>{label}</option>{/each}
+                </select>
+                {#if excuse[date].reason === 'inne'}
+                  <input aria-label={t('Inny powód: {day}', { day: fmtDay(date) })} placeholder={t('Wpisz powód')} maxlength="200" bind:value={excuse[date].other} />
+                {/if}
+              {/if}
+            </li>
+          {/each}
+        </ul>
+        {#if text.length}
+          <pre>{text.join('\n')}</pre>
+          <button class="primary wide" onclick={() => writeExcuse(text.join('\n'))}>{t('Napisz do wychowawcy')}</button>
+        {/if}
+      </div>
+    {/if}
     {#if d.subjects.length}
       <section class="card">
         <h2>{t('Obecność na przedmiotach')}</h2>

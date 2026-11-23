@@ -421,7 +421,37 @@ check('attendance: the list narrows to one kind', JSON.stringify(await marks()) 
   (await js(`document.querySelector('.filter [aria-pressed=true]').innerText`)) === 'Nieuspr.', await marks());
 await clickText('.filter button', 'Wszystkie');
 check('attendance: and back to all', (await marks()).length === 3);
+// The calendar opens on the month of the last entry, each day with its lessons as bars in their order.
+const bars = () => js(`[...document.querySelectorAll('main .month .grid button')].map((b) => [...b.querySelectorAll('.bars span')].map((s) => s.className).join(' ')).filter(Boolean)`);
+check('attendance calendar: the month of the last entry, each day its lessons in order, presence plain', (await rows('main .range'))[0] === 'październik 2026' &&
+  JSON.stringify(await bars()) === JSON.stringify(['present', 'g1', 'blue g5', 'present']), [await rows('main .range'), await bars()]);
+await js(`document.querySelectorAll('main .month .grid button')[2].click()`);
+await until(`document.querySelector('main .card > .day')`);
+const picked = await rows('main .card:has(> .day) .entries li');
+check('attendance calendar: a picked day lists its lessons with their marks', JSON.stringify(picked) === JSON.stringify(['sp Innelekcja 1 Spóźnienie', 'u Innelekcja 4 Nieobecność uspr.']), picked);
+await shot('4-attendance-calendar');
+await clickText('main .pager button', 'Dziś');
 await shot('4-attendance');
+// The excuse: the unexcused day ticked with a reason becomes a message to the class tutor, sent by hand.
+await js(`document.querySelector('main .excuse .check input').click()`);
+await until(`document.querySelector('main .excuse select')`);
+await js(`(() => { const s = document.querySelector('main .excuse select'); s.value = 'złe samopoczucie'; s.dispatchEvent(new Event('change', { bubbles: true })); })()`);
+await until(`document.querySelector('main .excuse pre')?.textContent.includes('złe')`);
+check('excuse: a whole day missed is one line', (await rows('main .excuse pre'))[0] === '02.10.2026 - złe samopoczucie', await rows('main .excuse pre'));
+// "inne" takes the words typed for it.
+await js(`(() => { const s = document.querySelector('main .excuse select'); s.value = 'inne'; s.dispatchEvent(new Event('change', { bubbles: true })); })()`);
+await until(`document.querySelector('main .excuse input[maxlength]')`);
+await js(`(() => { const i = document.querySelector('main .excuse input[maxlength]'); i.value = 'zawody sportowe'; i.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+await until(`document.querySelector('main .excuse pre')?.textContent.includes('zawody')`);
+check('excuse: another reason in its own words', (await rows('main .excuse pre'))[0] === '02.10.2026 - zawody sportowe', await rows('main .excuse pre'));
+await js(`(() => { const s = document.querySelector('main .excuse select'); s.value = 'złe samopoczucie'; s.dispatchEvent(new Event('change', { bubbles: true })); })()`);
+await until(`document.querySelector('main .excuse pre')?.textContent.includes('złe')`);
+await clickText('main .excuse button', 'Napisz do wychowawcy');
+await until(`document.querySelector('form.compose .picked')`);
+const draft = await js(`({ to: [...document.querySelectorAll('form.compose .picked li')].map((li) => li.textContent.trim()), subject: document.querySelector('form.compose [name=subject]').value, body: document.querySelector('form.compose [name=body]').value })`);
+check('excuse: a new message to the class tutor with the lines in it', JSON.stringify(draft.to) === '["Anna Nowak"]' && draft.subject === 'Usprawiedliwienie nieobecności' &&
+  draft.body.includes('\n\n02.10.2026 - złe samopoczucie\n\n'), draft);
+await shot('4-excuse-message');
 
 await go('#/wiecej', `document.querySelectorAll('.menu a').length > 0`);
 const menu = await text('.menu a');
