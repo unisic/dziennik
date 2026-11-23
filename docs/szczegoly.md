@@ -193,7 +193,10 @@ nieusprawiedliwione są czerwone, usprawiedliwione zielone, spóźnienia niebies
 można przestawić na jeden z siedmiu odcieni aplikacji (skala ocen i niebieski, z gotowym kontrastem w obu motywach)
 albo wrócić do domyślnych; rodzaje wpisów dodane przez szkołę zostają szare. Wybrany motyw nie trzyma drugiej kopii kolorów: `applyTheme` w
 `web/src/util.js` zmienia warunek bloku `prefers-color-scheme: dark` w arkuszu na "zawsze" albo "nigdy", a za nim idą
-`color-scheme` i kolor paska przeglądarki. Ustawienia ocen są jedne dla wszystkich uczniów konta. Niżej "Aplikacja" (instalacja, samouczek, zgłoszenie
+`color-scheme` i kolor paska przeglądarki. `theme_color` w manifeście to celowo tło ciemnego
+motywu: Chrome na Androidzie maluje nim pasek nawigacji zainstalowanej aplikacji, kolor ustala raz, przy instalacji, i
+nie zna wersji ciemnej. Z jasnym kolorem pasek był jasny przy ciemnym motywie, bez koloru biały; z ciemnym w trybie
+nocnym ma tło aplikacji, a w jasnym zostaje biały (Chrome 157, Android 16). Ustawienia ocen są jedne dla wszystkich uczniów konta. Niżej "Aplikacja" (instalacja, samouczek, zgłoszenie
 błędu) i "Konto": wylogowanie, które jest też w "Więcej" i w pasku bocznym, oraz "Usuń moje dane" (RODO art. 17),
 tylko tutaj, żeby dało się do niego dojść także na szerokim ekranie, który nie ma "Więcej".
 Tryb do zrzutów ekranu ("Skróć nazwiska" w "Ustawieniach"): osoby to imię i
