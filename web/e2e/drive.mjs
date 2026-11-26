@@ -784,6 +784,17 @@ const plainMenu = await text('.menu a');
 check('access: page and menu entry hidden from non-admins', plainMenu.length === 12 && !plainMenu.includes('Dostęp do aplikacji') && (await log()).filter((l) => l === 'GET /api/admin/emails').length === 1, plainMenu);
 
 // Among the settings, so that a wide screen, which has no "Więcej", reaches it as well.
+// A grade's color: picked for its value, worn by every grade of it, and back to its own.
+await go('#/ustawienia', `!!document.querySelector('main [aria-labelledby="grade-5"] .chip')`);
+const gradeDefault = await js(`document.querySelector('main [aria-labelledby="grade-5"] [aria-pressed=true]').className`);
+await js(`document.querySelector('main [aria-labelledby="grade-5"] button[aria-label="niebieski"]').click()`);
+await go('#/oceny', `document.querySelectorAll('main button.chip').length > 0`);
+const gradeChips = await js(`[...document.querySelectorAll('main button.chip')].map((c) => [c.textContent.trim()[0], c.classList.contains('blue'), c.classList.contains('g5')])`);
+await go('#/ustawienia', `!!document.querySelector('main [aria-labelledby="grade-5"] .chip')`);
+await js(`document.querySelector('main [aria-labelledby="grade-5"] .g5').click()`);
+check('settings: a grade takes the color picked for its value, and its own again', gradeDefault.includes('g5') && gradeChips.some(([v, b]) => v === '5' && b) &&
+  !gradeChips.some(([v, b, g]) => (v === '5' && g) || (v !== '5' && b)) && (await js(`localStorage.getItem('grade-tone/5')`)) === null, { gradeDefault, gradeChips });
+
 await go('#/ustawienia', `[...document.querySelectorAll('main button')].some((b) => b.textContent.trim() === 'Usuń moje dane')`);
 check('settings: the account, logout and the bug report are here as well', (await mainText()).includes('Zalogowano jako ') && (await js(hasButton('Wyloguj'))) &&
   (await js(`[...document.querySelectorAll('main a')].some((a) => a.textContent.trim() === 'Zgłoś błąd' && a.target === '_blank' && a.href.includes('/issues/new'))`)));
@@ -985,19 +996,19 @@ check('premium: a refused paid module is explained once Librus confirms there is
 // Messages of that account come from the Synergia website instead.
 check('webmail: unread badge read from the website', (await text('nav.tabs .badge'))[0] === '1', await text('nav.tabs .badge'));
 await go('#/wiadomosci', `document.querySelectorAll('.messages li').length === 2`);
-const webInbox = await js(`[...document.querySelectorAll('.messages li')].map((li) => [li.querySelector('.who').textContent, li.querySelector('.subject').textContent, li.querySelector('time').title])`);
-check('webmail: received folder, unread one marked', JSON.stringify(webInbox) === JSON.stringify([['Nowak Anna (nauczyciel)', 'Zebranie', '9 lis 2026, 08:15'], ['Zieliński Piotr', 'Regulamin', '2 lis 2026, 10:00']]) &&
+const webInbox = await js(`[...document.querySelectorAll('.messages li')].map((li) => [li.querySelector('.who > span').textContent, li.querySelector('.role')?.textContent, li.querySelector('.subject').textContent, li.querySelector('time').title])`);
+check('webmail: received folder, unread one marked', JSON.stringify(webInbox) === JSON.stringify([['Nowak Anna', 'Nauczyciel', 'Zebranie', '9 lis 2026, 08:15'], ['Zieliński Piotr', null, 'Regulamin', '2 lis 2026, 10:00']]) &&
   JSON.stringify(await text('.messages li.unread .subject')) === JSON.stringify(['Zebranie']), webInbox);
 check('webmail: writing is offered like on any account', await js(`[...document.querySelectorAll('main a')].some((a) => a.textContent.trim() === 'Napisz')`));
 await clickText('.segmented button', 'Wysłane');
 await until(`document.querySelectorAll('.messages li').length === 1`);
-check('webmail: sent folder loaded on demand', (await rows('.messages li'))[0]?.startsWith('Do: Nowak Anna (nauczyciel) Pytanie o wycieczkę ') && (await js(`document.querySelector('.messages time').title`)) === '3 lis 2026, 17:30' && (await log()).filter((l) => l === 'GET /api/w/2002u/wiadomosci/6').length === 1, await rows('.messages li'));
+check('webmail: sent folder loaded on demand', (await rows('.messages li'))[0]?.startsWith('NA Do: Nowak AnnaNauczyciel Pytanie o wycieczkę ') && (await js(`document.querySelector('.messages time').title`)) === '3 lis 2026, 17:30' && (await log()).filter((l) => l === 'GET /api/w/2002u/wiadomosci/6').length === 1, await rows('.messages li'));
 await js(`document.querySelector('.messages a').click()`);
 await until(`!!document.querySelector('main article')`);
-check('webmail: sent message lists its recipients', (await mainText()).includes('Do: Nowak Anna (nauczyciel)') && !(await mainText()).includes('Od:') && (await mainText()).includes('Czy wycieczka jest aktualna?'), await mainText());
+check('webmail: sent message lists its recipients', (await mainText()).includes('Do: Nowak Anna') && !(await mainText()).includes('Od:') && (await mainText()).includes('Czy wycieczka jest aktualna?'), await mainText());
 await go('#/wiadomosci/5-301', `!!document.querySelector('main article')`);
 const webMsg = await js(`document.querySelector('main article').innerText`);
-check('webmail: message read from the page', (await text('main h1'))[0] === 'Zebranie' && webMsg.includes('Od: Nowak Anna (nauczyciel)') && webMsg.includes('9 lis 2026, 08:15') && webMsg.includes('zebranie we wtorek'), webMsg);
+check('webmail: message read from the page', (await text('main h1'))[0] === 'Zebranie' && webMsg.includes('Od: Nowak Anna · Nauczyciel') && webMsg.includes('9 lis 2026, 08:15') && webMsg.includes('zebranie we wtorek'), webMsg);
 check('webmail: page content is text, nothing in it runs', (await js(`window.pwned === undefined && !document.querySelector('main img, main script')`)) &&
   (await js(`document.querySelector('main .rich a')?.href`)) === 'https://example.com/z');
 check('webmail: opening a message clears the badge', await until(`!document.querySelector('nav.tabs .badge')`));
@@ -1040,7 +1051,7 @@ check('webmail compose: opens the message found in the sent folder', (await text
 await go('#/wiadomosci/5-301', `!!document.querySelector('main article')`);
 await clickText('main a', 'Odpowiedz');
 await until(`!!document.querySelector('form.compose')`);
-check('webmail reply: recipient and subject prefilled', (await mainText()).includes('Do: Nowak Anna (nauczyciel)') &&
+check('webmail reply: recipient and subject prefilled', (await mainText()).includes('Do: Nowak Anna') &&
   (await js(`document.querySelector('.compose label input').value`)) === 'Re: Zebranie' && !(await js(`!!document.querySelector('.receivers')`)));
 await setField('.compose textarea', 'Będę.');
 await submit();

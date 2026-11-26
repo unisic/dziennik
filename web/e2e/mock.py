@@ -211,11 +211,11 @@ def web_message(rows, content, after):
 def website(path):
     if path == "wiadomosci/5":
         return {"html": web_list("Nadawca", [
-            web_row(5, 301, "Nowak Anna (nauczyciel)", "Zebranie", "2026-11-09 08:15:00", unread=not WEB_READ["301"]),
+            web_row(5, 301, "Nowak Anna (Nowak Anna) [Nauczyciel]", "Zebranie", "2026-11-09 08:15:00", unread=not WEB_READ["301"]),
             web_row(5, 300, "Zieliński Piotr", "Regulamin", "2026-11-02 10:00:00", files=True)])}
     if path == "wiadomosci/6":
         return {"html": web_list("Adresat", [web_row(6, i, who, title, date) for i, who, title, _, date in WEB_SENT]
-                                 + [web_row(6, 400, "Nowak Anna (nauczyciel)", "Pytanie o wycieczkę", "2026-11-03 17:30:00")])}
+                                 + [web_row(6, 400, "Nowak Anna (Nowak Anna) [Nauczyciel]", "Pytanie o wycieczkę", "2026-11-03 17:30:00")])}
     if path == "wiadomosci/2/5":
         radios = (web_radio("wychowawca", "Wychowawcy") + web_radio("rada_rodzicow", "Rada klasowa rodzic&oacute;w", "false, 0 , 58899")
                   + web_radio("nauczyciel", "Nauczyciele") + web_radio("grupa", "Grupa adresat&oacute;w"))
@@ -237,7 +237,7 @@ def website(path):
     if path == "wiadomosci/1/5/301/f0":
         WEB_READ["301"] = True
         return {"html": web_message(
-            [("Nadawca", "Nowak Anna (nauczyciel)"), ("Temat", "Zebranie"), ("Wysłano", "2026-11-09 08:15:00")],
+            [("Nadawca", "Nowak Anna (Nowak Anna) [Nauczyciel]"), ("Temat", "Zebranie"), ("Wysłano", "2026-11-09 08:15:00")],
             'Dzień dobry,<br /><br />zebranie we wtorek: <a href="https://example.com/z" target="_blank">https://example.com/z</a>'
             '<script>window.pwned=3</script><img src=x onerror="window.pwned=4">',
             '<table class="stretch"><tr><td class="medium"><b>Przeczytano</b></td><td class="left">2026-11-09 09:00:00</td></tr></table>')}

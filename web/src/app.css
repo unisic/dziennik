@@ -2265,8 +2265,9 @@ button.chip {
 .chip.final.g3 { background: var(--g3-text); color: var(--surface); }
 .chip.final.g2 { background: var(--g2-text); color: var(--surface); }
 .chip.final.g1 { background: var(--g1-text); color: var(--surface); }
+.chip.final.blue { background: var(--mark); color: var(--surface); }
 /* Off the scale ("zw", "zaliczono") a final grade stays grey, marked final by an outline. */
-.chip.final:not(.g1, .g2, .g3, .g4, .g5, .g6) { box-shadow: inset 0 0 0 1.5px var(--field); }
+.chip.final:not(.g1, .g2, .g3, .g4, .g5, .g6, .blue) { box-shadow: inset 0 0 0 1.5px var(--field); }
 
 /* Recent grades: the grades in one column, however long the longest. */
 .entries.recent {
@@ -2656,7 +2657,7 @@ summary small,
   border-top: 1px solid var(--rule);
 }
 
-/* Expandable rows (homework, notices) */
+/* Expandable rows (homework, notices, the color groups of the settings) */
 
 .stack > details summary {
   display: block;
@@ -2695,6 +2696,10 @@ summary small,
 
 .stack > details > :last-child {
   margin-bottom: var(--space-2);
+}
+
+.colors .section:first-of-type {
+  margin-top: var(--space-2);
 }
 
 /* The one dot that says "not read yet": after a homework's title and after a message's sender, inside the text. */
@@ -2755,14 +2760,34 @@ details.done summary > strong {
   align-items: center;
   gap: 6px;
   min-width: 0;
+  font-weight: 500;
 }
 
 .messages .unread .who {
   font-weight: 600;
 }
 
+/* Each sender keeps one tint, as a subject does in the plan: the same person is found by color down the list. */
+.avatar.hue {
+  background: hsl(var(--hue) var(--tint));
+  box-shadow: inset 0 0 0 1.5px hsl(var(--hue) var(--tint-edge));
+}
+
+.messages .role {
+  flex: none;
+  order: 1;
+  font-weight: 400;
+}
+
 .messages .subject {
+  margin-top: 2px;
   font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* Read ones step the subject back, unread ones keep it in full ink. */
+.messages .unread .subject {
+  color: var(--text);
 }
 
 .message .meta {

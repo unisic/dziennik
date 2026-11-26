@@ -1,6 +1,6 @@
 <script>
   import { resource } from './api.svelte.js';
-  import { ago } from './util.js';
+  import { ago, paint } from './util.js';
   import { activity } from './data.js';
   import Async from './Async.svelte';
   import Icon from './Icon.svelte';
@@ -21,7 +21,7 @@
         <li>
           <a href="#/{e.page}">
             {#if e.grade}
-              <span class="chip static {e.grade.tone}" class:final={e.grade.kind}><Mark value={e.grade.value} was={e.grade.was} /></span>
+              <span class="chip static {paint(e.grade.tone)}" class:final={e.grade.kind}><Mark value={e.grade.value} was={e.grade.was} /></span>
             {:else}
               <!-- Something removed: the icon of its page struck through, so it does not read as something new there. -->
               <span class="tile"><Icon name={ICONS[e.page.split('/')[0]] ?? 'pulse'} off={e.gone} size={18} /></span>

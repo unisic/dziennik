@@ -1,7 +1,7 @@
 <script>
   import { api, session, message, clearApiCache, lookup, resource, byId } from './api.svelte.js';
   import { disable as disablePush } from './push.js';
-  import { stored, choiceOf, applyTheme, short, mail, FORCED_KEY, SHORT_KEY, TOUR_KEY, PLUS, MINUS, YEAR, PLAN, THEME, TONES, ATTENDANCE, HUE_KEY, HUES } from './util.js';
+  import { stored, choiceOf, applyTheme, short, mail, FORCED_KEY, SHORT_KEY, TOUR_KEY, PLUS, MINUS, YEAR, PLAN, THEME, TONES, ATTENDANCE, GRADES, HUE_KEY, HUES } from './util.js';
   import { hue } from './Lessons.svelte';
   import Async from './Async.svelte';
   import Icon from './Icon.svelte';
@@ -21,7 +21,10 @@
   let theme = $state(choiceOf(THEME));
   let plan = $state(choiceOf(PLAN));
   /** The tint of each kind of attendance mark, by the kind's id. */
+  /** The tint of each grade 1 to 6, by its tone class. */
+  let gradeTones = $state(Object.fromEntries([...GRADES].map(([tone, g]) => [tone, choiceOf(g)])));
   let tones = $state(Object.fromEntries([...ATTENDANCE].map(([std, kind]) => [std, choiceOf(kind)])));
+  const names = new Map([['g6', t('ciemnozielony')], ...TONES]);
   const comma = (v) => Number(v).toLocaleString(locale);
 
   /** The class's subjects, from its lessons, by name; each with the hue picked for it, or null for its own. */
@@ -118,49 +121,70 @@
 </section>
 
 <section class="card">
-  <h2>{t('Kolory frekwencji')}</h2>
-  {#each [...ATTENDANCE] as [std, kind] (std)}
-    <h3 class="section" id="tone-{std}">{kind.label}</h3>
-    <div class="swatches" role="group" aria-labelledby="tone-{std}">
-      {#each TONES as [tone, name] (tone)}
-        <button class="chip {tone}" aria-pressed={tones[std] === tone} aria-label={name} title={name} onclick={() => pick(kind, tone) && (tones[std] = tone)}>{kind.sample}</button>
+  <h2>{t('Kolory')}</h2>
+  <div class="stack colors">
+    <details>
+      <summary><strong>{t('Frekwencja')}</strong></summary>
+      {#each [...ATTENDANCE] as [std, kind] (std)}
+        <h3 class="section" id="tone-{std}">{kind.label}</h3>
+        <div class="swatches" role="group" aria-labelledby="tone-{std}">
+          {#each TONES as [tone, name] (tone)}
+            <button class="chip {tone}" aria-pressed={tones[std] === tone} aria-label={name} title={name} onclick={() => pick(kind, tone) && (tones[std] = tone)}>{kind.sample}</button>
+          {/each}
+        </div>
       {/each}
-    </div>
-  {/each}
-  <p class="muted">
-    {t('Kolor znaczka przy wpisie we Frekwencji. Rodzaje wpisów, które szkoła dodała sama, zostają szare.')}
-    {#if [...ATTENDANCE].some(([std, kind]) => tones[std] !== kind.options[0])}
-      <button class="link" onclick={() => [...ATTENDANCE].forEach(([std, kind]) => pick(kind, kind.options[0]) && (tones[std] = kind.options[0]))}>{t('Przywróć domyślne')}</button>
-    {/if}
-  </p>
-</section>
-
-{#if login}
-  <section class="card">
-    <h2>{t('Kolory przedmiotów')}</h2>
-    <Async r={classSubjects} empty={t('Brak przedmiotów.')}>
-      {#snippet children(list)}
-        {#each list as s (s.Id)}
-          {@const own = (hues, hue(s))}
-          {@const set = own !== hue(s, false)}
-          <h3 class="section" id="hue-{s.Id}">{s.name}</h3>
-          <div class="swatches" role="group" aria-labelledby="hue-{s.Id}">
-            <button class="chip hue auto" style:--hue={hue(s, false)} aria-pressed={!set} aria-label={t('Automatycznie')} title={t('Automatycznie')} onclick={() => pickHue(s.Id, null)}></button>
-            {#each HUES as [h, name] (h)}
-              <button class="chip hue" style:--hue={h} aria-pressed={set && own === h} aria-label={name} title={name} onclick={() => pickHue(s.Id, h)}></button>
+      <p class="muted">
+        {t('Kolor znaczka przy wpisie we Frekwencji. Rodzaje wpisów, które szkoła dodała sama, zostają szare.')}
+        {#if [...ATTENDANCE].some(([std, kind]) => tones[std] !== kind.options[0])}
+          <button class="link" onclick={() => [...ATTENDANCE].forEach(([std, kind]) => pick(kind, kind.options[0]) && (tones[std] = kind.options[0]))}>{t('Przywróć domyślne')}</button>
+        {/if}
+      </p>
+    </details>
+    <details>
+      <summary><strong>{t('Oceny')}</strong></summary>
+      {#each [...GRADES] as [tone, g] (tone)}
+        <h3 class="section" id="grade-{g.n}">{t('Ocena {value}', { value: g.n })}</h3>
+        <div class="swatches" role="group" aria-labelledby="grade-{g.n}">
+          {#each g.options as option (option)}
+            <button class="chip {option}" aria-pressed={gradeTones[tone] === option} aria-label={names.get(option)} title={names.get(option)} onclick={() => pick(g, option) && (gradeTones[tone] = option)}>{g.n}</button>
+          {/each}
+        </div>
+      {/each}
+      <p class="muted">
+        {t('Kolor oceny w Ocenach, na Starcie i w Aktywności. Oceny punktowe i opisowe zostają szare.')}
+        {#if [...GRADES].some(([tone, g]) => gradeTones[tone] !== g.options[0])}
+          <button class="link" onclick={() => [...GRADES].forEach(([tone, g]) => pick(g, g.options[0]) && (gradeTones[tone] = g.options[0]))}>{t('Przywróć domyślne')}</button>
+        {/if}
+      </p>
+    </details>
+    {#if login}
+      <details>
+        <summary><strong>{t('Przedmioty')}</strong></summary>
+        <Async r={classSubjects} empty={t('Brak przedmiotów.')}>
+          {#snippet children(list)}
+            {#each list as s (s.Id)}
+              {@const own = (hues, hue(s))}
+              {@const set = own !== hue(s, false)}
+              <h3 class="section" id="hue-{s.Id}">{s.name}</h3>
+              <div class="swatches" role="group" aria-labelledby="hue-{s.Id}">
+                <button class="chip hue auto" style:--hue={hue(s, false)} aria-pressed={!set} aria-label={t('Automatycznie')} title={t('Automatycznie')} onclick={() => pickHue(s.Id, null)}></button>
+                {#each HUES as [h, name] (h)}
+                  <button class="chip hue" style:--hue={h} aria-pressed={set && own === h} aria-label={name} title={name} onclick={() => pickHue(s.Id, h)}></button>
+                {/each}
+              </div>
             {/each}
-          </div>
-        {/each}
-        <p class="muted">
-          {t('Kolor lekcji w planie. Pierwszy, z kreską, to kolor, który przedmiot dostaje sam.')}
-          {#if (hues, list.some((s) => hue(s) !== hue(s, false)))}
-            <button class="link" onclick={() => list.forEach((s) => pickHue(s.Id, null))}>{t('Przywróć domyślne')}</button>
-          {/if}
-        </p>
-      {/snippet}
-    </Async>
-  </section>
-{/if}
+            <p class="muted">
+              {t('Kolor lekcji w planie. Pierwszy, z kreską, to kolor, który przedmiot dostaje sam.')}
+              {#if (hues, list.some((s) => hue(s) !== hue(s, false)))}
+                <button class="link" onclick={() => list.forEach((s) => pickHue(s.Id, null))}>{t('Przywróć domyślne')}</button>
+              {/if}
+            </p>
+          {/snippet}
+        </Async>
+      </details>
+    {/if}
+  </div>
+</section>
 
 <section class="card">
   <h2>{t('Średnie ocen')}</h2>

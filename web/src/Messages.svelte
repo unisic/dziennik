@@ -3,6 +3,7 @@
   import { SvelteSet } from 'svelte/reactivity';
   import { synergia, resource, byId, message } from './api.svelte.js';
   import { viaWeb, useWeb, folder as webFolder, message as webMessage, fileLink, refreshUnread } from './webmail.js';
+  import { hue } from './Lessons.svelte';
   import { fmtUnix, ago, person, plain, initials, plural } from './util.js';
   import Async from './Async.svelte';
   import Rich from './Rich.svelte';
@@ -162,9 +163,9 @@
     {#snippet children(m)}
       <article class="card message">
         <div class="meta">
-          <span class="avatar small" aria-hidden="true">{initials(m.from || m.to)}</span>
+          <span class="avatar small hue" style:--hue={hue({ Name: m.from || m.to }, false)} aria-hidden="true">{initials(m.from || m.to)}</span>
           <p>
-            {#if m.from}{t('Od:')} <strong>{m.from}</strong><br />{/if}
+            {#if m.from}{t('Od:')} <strong>{m.from}</strong>{#if m.role}<span class="muted">{' · '}{m.role}</span>{/if}<br />{/if}
             <span class="muted">{#if m.to}{t('Do:')} {m.to}<br />{/if}{fmtUnix(m.date)}</span>
           </p>
         </div>
@@ -225,8 +226,9 @@
           {#each shown as m (m.id)}
             <li class:unread={unread(m)}>
               <a href="#/wiadomosci/{m.id}">
+                <span class="avatar hue" style:--hue={hue({ Name: m.who }, false)} aria-hidden="true">{initials(m.who)}</span>
                 <span class="grow">
-                  <span class="who"><span>{folder === 'out' ? `${t('Do:')} ` : ''}{m.who}</span></span>
+                  <span class="who"><span>{folder === 'out' ? `${t('Do:')} ` : ''}{m.who}</span>{#if m.role}<small class="muted role">{m.role}</small>{/if}</span>
                   <small class="subject">{m.title}</small>
                 </span>
                 <time title={fmtUnix(m.date)}>{ago(m.date)}</time>

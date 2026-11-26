@@ -1,6 +1,6 @@
 <script>
   import { synergia, resource, inbox, clock } from './api.svelte.js';
-  import { today, mondayOf, shift, fmtDay, fmtDate, plural } from './util.js';
+  import { today, mondayOf, shift, fmtDay, fmtDate, plural, paint } from './util.js';
   import { week, monthEvents, grades, upcomingDay, unseenGrades } from './data.js';
   import Async from './Async.svelte';
   import Icon from './Icon.svelte';
@@ -115,7 +115,7 @@
             <ul class="entries recent">
               {#each r.list as g (g.id)}
                 <li>
-                  <span class="chip static {g.tone}" class:final={g.kind}><Mark value={g.value} was={g.was} /></span>
+                  <span class="chip static {paint(g.tone)}" class:final={g.kind}><Mark value={g.value} was={g.was} /></span>
                   <span>{g.name}{#if g.kind}<span class="muted">{' · '}{KINDS[g.kind]}</span>{/if}</span>
                   <span class="muted">{fmtDate(addedAt(g))}</span>
                 </li>

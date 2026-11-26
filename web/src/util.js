@@ -171,6 +171,18 @@ export const TONES = [['g1', t('czerwony')], ['g2', t('pomarańczowy')], ['g3', 
  * listed: what each is called, in full and short, the symbol schools usually give it, and the tint of its mark,
  * picked in "Ustawienia" with the default first. A kind a school made up stays grey.
  */
+/** Grades 1 to 6 by their tone class, each with the tint picked in "Ustawienia", its own first. */
+export const GRADES = new Map(
+  [1, 2, 3, 4, 5, 6].map((n) => {
+    const tone = `g${n}`;
+    const options = [tone, ...[['g6', t('ciemnozielony')], ...TONES].map(([x]) => x).filter((x) => x !== tone)];
+    return [tone, { n, key: `grade-tone/${n}`, options }];
+  }),
+);
+
+/** The tint a grade chip wears: the one picked for its value in "Ustawienia", else its tone as it is. */
+export const paint = (tone) => (GRADES.has(tone) ? choiceOf(GRADES.get(tone)) : tone);
+
 export const ATTENDANCE = new Map(
   [
     [1, t('Nieusprawiedliwione'), t('Nieuspr.'), 'nb', 'g1'],

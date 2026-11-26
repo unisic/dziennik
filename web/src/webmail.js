@@ -9,6 +9,11 @@ import { t } from './i18n.js';
  * Selectors follow the site's markup as of November 2026.
  */
 const FOLDER = { in: 5, out: 6 };
+/** "Hadryan Ksenia (Hadryan Ksenia) [Nauczyciel]" as the name, its repeat dropped, and the role apart. */
+export function person(raw) {
+  const [, name = '', also, role] = /^(.*?)\s*(?:\(([^)]*)\))?\s*(?:\[([^\]]*)\])?$/.exec(raw.trim()) ?? [];
+  return { name: surnameFirst(also && also !== name ? `${name} (${also})` : name), role };
+}
 /** Limits the site's form checks before it submits: wyslij_wiadomosc(button, 150, 20000, ...). */
 const MAX_SUBJECT = 150;
 const MAX_BODY = 20000;
@@ -56,7 +61,7 @@ export async function folder(login, name) {
       {
         id: `${n}-${id}`,
         title: text(title) || t('(bez tematu)'),
-        who: surnameFirst(text(who)),
+        ...((p) => ({ who: p.name, role: p.role }))(person(text(who))),
         date: unix(text(date)),
         sent: name === 'out',
         // The site prints unread rows in bold.
@@ -77,12 +82,12 @@ export async function message(login, key) {
   const readers = n === String(FOLDER.out) ? [...(label('Przeczytano')?.closest('table').rows ?? [])].slice(1) : [];
   return {
     title: field('Temat') || t('(bez tematu)'),
-    from: surnameFirst(field('Nadawca')),
-    to: readers.map((tr) => surnameFirst(text(tr.cells[0]))).filter(Boolean).join(', '),
+    ...((p) => ({ from: p.name, role: p.role }))(person(field('Nadawca'))),
+    to: readers.map((tr) => person(text(tr.cells[0])).name).filter(Boolean).join(', '),
     // Each recipient's second cell: when they read it, or "NIE".
     reads: readers
       .filter((tr) => text(tr.cells[0]))
-      .map((tr) => ({ who: surnameFirst(text(tr.cells[0])), at: /^\d{4}-\d\d-\d\d/.test(text(tr.cells[1])) ? unix(text(tr.cells[1])) : null })),
+      .map((tr) => ({ who: person(text(tr.cells[0])).name, at: /^\d{4}-\d\d-\d\d/.test(text(tr.cells[1])) ? unix(text(tr.cells[1])) : null })),
     date: unix(field('Wysłano')),
     body: plain(doc.querySelector('.container-message-content')?.innerHTML ?? ''),
     files: [...doc.querySelectorAll('img[onclick*="pobierz_zalacznik"]')].map((img) => ({

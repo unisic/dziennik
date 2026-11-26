@@ -1,6 +1,6 @@
 <script>
   import { resource } from './api.svelte.js';
-  import { fmtDate, fmtAverage, worth, gradeTone, stored, choiceOf, FORCED_KEY, PLUS, MINUS, YEAR } from './util.js';
+  import { fmtDate, fmtAverage, worth, gradeTone, paint, stored, choiceOf, FORCED_KEY, PLUS, MINUS, YEAR } from './util.js';
   import { grades, unseenGrades, markGradeSeen } from './data.js';
   import Async from './Async.svelte';
   import Mark from './Mark.svelte';
@@ -231,7 +231,7 @@
                     <ul class="chips">
                       {#each grades as g (g.id)}
                         <li>
-                          <button class="chip {g.tone}" class:fresh={g.fresh} aria-label={t('Ocena {value}', { value: g.value }) + (g.was ? t(', poprawa oceny {value}', { value: g.was.at(-1).value }) : '') + (g.fresh ? t(', nowa') : '')} aria-expanded={open === g.id} onclick={() => toggle(g)}>
+                          <button class="chip {paint(g.tone)}" class:fresh={g.fresh} aria-label={t('Ocena {value}', { value: g.value }) + (g.was ? t(', poprawa oceny {value}', { value: g.was.at(-1).value }) : '') + (g.fresh ? t(', nowa') : '')} aria-expanded={open === g.id} onclick={() => toggle(g)}>
                             <Mark value={g.value} was={g.was} />
                           </button>
                         </li>
@@ -257,7 +257,7 @@
                   <ul class="chips">
                     {#each (tries[s.key] ?? []).filter((g) => g.semester === sem) as g (g.id)}
                       <li>
-                        <button class="chip tried {g.tone}" aria-label={t('Ocena na próbę {value}, waga {w}: usuń', { value: g.value, w: g.weight })} title={t('Waga {w}: usuń', { w: g.weight })} onclick={() => (tries[s.key] = tries[s.key].filter((x) => x !== g))}>
+                        <button class="chip tried {paint(g.tone)}" aria-label={t('Ocena na próbę {value}, waga {w}: usuń', { value: g.value, w: g.weight })} title={t('Waga {w}: usuń', { w: g.weight })} onclick={() => (tries[s.key] = tries[s.key].filter((x) => x !== g))}>
                           <Mark value={g.value} />
                         </button>
                       </li>
@@ -281,7 +281,7 @@
               {#each [...s.final[sem], ...s.final[0]] as g (g.id)}
                 <p class="row final">
                   <span class="muted label">{g.kind.replace(/^Ocena (\p{L})/u, (_, c) => c.toUpperCase())}</span>
-                  <strong class="chip static final {g.tone}"><Mark value={g.value} /></strong>
+                  <strong class="chip static final {paint(g.tone)}"><Mark value={g.value} /></strong>
                 </p>
               {/each}
             </div>
