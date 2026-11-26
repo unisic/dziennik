@@ -317,7 +317,8 @@ def dynamic(rest, q):
         MSG_READ["11"] = True
         return {"Message": {"Id": "11", "Subject": json.dumps("Wycieczka"), "SendDate": 1762675200, "Sender": {"Id": 1},
                             "Receivers": [{"Id": 9}], "AddedFiles": "1",
-                            "Body": json.dumps("Dzien dobry,<br>szczegoly: https://example.com/x<img src=x onerror=\"window.pwned=1\"><script>window.pwned=2</script>")}}
+                            "Body": json.dumps("Dzien dobry,<br />\nszczegoly: https://example.com/x<img src=x onerror=\"window.pwned=1\"><script>window.pwned=2</script>"
+                                               "<p>&nbsp;</p>\n<ul>\n  <li>zgoda</li>\n  <li>wplata</li>\n</ul>\n<table><tr><td>Data</td><td>12.11</td></tr></table>")}}
     if rest == "Messages/12":
         return {"Message": {"Id": "12", "Subject": json.dumps("Stara"), "SendDate": 1762675200, "Sender": {"Id": "2"},
                             "Receivers": [{"Id": 9}], "AddedFiles": "1", "Body": json.dumps("W załączniku."),

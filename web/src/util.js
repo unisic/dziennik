@@ -160,6 +160,10 @@ export const MINUS = { key: 'minus-worth', options: ['0.25', '0.33', '0.5', '0']
 export const YEAR = { key: 'year-average', options: ['all', 'halves'] };
 
 /** The tints a mark can take (app.css), with their names: the grade scale's and the one blue. */
+/** A subject's hue picked in "Ustawienia", under this key and the subject's id; none: the one it gets (Lessons). */
+export const HUE_KEY = 'subject-hue/';
+/** The hues a subject can take, round the wheel short of red (a cancellation's), with their names. */
+export const HUES = [[30, t('pomarańczowy')], [48, t('żółty')], [80, t('limonkowy')], [130, t('zielony')], [165, t('morski')], [190, t('turkusowy')], [215, t('niebieski')], [245, t('indygo')], [275, t('fioletowy')], [310, t('różowy')]];
 export const TONES = [['g1', t('czerwony')], ['g2', t('pomarańczowy')], ['g3', t('żółty')], ['g4', t('limonkowy')], ['g5', t('zielony')], ['blue', t('niebieski')], ['g0', t('szary')]];
 
 /**
@@ -266,12 +270,27 @@ export function plain(s) {
   } catch {
     // already a bare string
   }
-  const html = s.replace(/<br\s*\/?>/gi, '\n').replace(/<\/(p|div|li|tr)>/gi, '\n');
+  // In markup a line break in the source is a space, as a browser shows it: "<br />\n" is one break, not a blank line.
+  // Text with no tags keeps its own line breaks.
+  const markup = /<(br|p|div|li|tr|td|th|table|ul|ol)\b/i.test(s);
+  const html = (markup ? s.replace(/\s*\n\s*/g, ' ') : s)
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<li\b[^>]*>/gi, '\n• ')
+    .replace(/<\/t[dh]>\s*(?=<t[dh]\b)/gi, ' · ')
+    // A paragraph has a gap after it, as on a page; empty ones in a row collapse below.
+    .replace(/<\/(p|h[1-6]|ul|ol|table)>/gi, '\n\n')
+    .replace(/<\/(div|tr)>/gi, '\n');
   // DOMParser documents are inert: no scripts run and no images load while decoding entities.
   const doc = new DOMParser().parseFromString(html, 'text/html');
   for (const el of doc.querySelectorAll('script, style')) el.remove();
   const text = doc.body.textContent ?? '';
-  return text.replace(/\n{3,}/g, '\n\n').trim();
+  // A line of spaces and &nbsp; only (an empty paragraph from an editor) counts as empty.
+  return text
+    .split('\n')
+    .map((line) => line.replace(/[ \u00a0]+$/, '').replace(/^[ \u00a0]+(?=\S)/, (lead) => (markup ? '' : lead)))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 /** Splits text so http(s) URLs can be rendered as links; odd indices are URLs. */

@@ -470,8 +470,16 @@ check('more: a bug report opens the issues apart from the app', await js(`(() =>
 
 await go('#/terminarz', `document.querySelectorAll('main .events li').length > 0`);
 const cal = await text('main .events li strong');
-check('calendar: month events incl. HomeWorks', cal.includes('Sprawdzian: Matematyka') && cal.includes('Wycieczka klasowa'), cal);
+// The trip is 5 days ahead: at the end of a month it is in the next one.
+const nextMonth = !cal.includes('Wycieczka klasowa');
+if (nextMonth) {
+  await js(`document.querySelector('main .pager button[aria-label="Następny miesiąc"]').click()`);
+  await until(`[...document.querySelectorAll('main .events li strong')].some((e) => e.textContent.includes('Wycieczka klasowa'))`);
+}
+const calTrip = nextMonth ? await text('main .events li strong') : cal;
+check('calendar: month events incl. HomeWorks', cal.includes('Sprawdzian: Matematyka') && calTrip.includes('Wycieczka klasowa'), [cal, calTrip]);
 check('calendar: range end shown', (await mainText()).includes('do '));
+if (nextMonth) await go('#/start', `!!document.querySelector('main')`), await go('#/terminarz', `document.querySelectorAll('main .events li').length > 0`);
 check('more tab current on subpage', (await text('nav.tabs a[aria-current=page]'))[0]?.endsWith('Więcej'));
 check('subpage: a way back to the menu', (await js(`document.querySelector('main a.back')?.getAttribute('href')`)) === '#/wiecej' && (await text('main a.back'))[0] === 'Więcej');
 await shot('6-calendar');
@@ -562,6 +570,9 @@ const msg = await js(`document.querySelector('main article').innerText`);
 check('message: detail, its subject the title under a way back to the list', (await text('main h1'))[0] === 'Wycieczka' && (await js(`document.querySelector('main a.back')?.compareDocumentPosition(document.querySelector('main h1')) === Node.DOCUMENT_POSITION_FOLLOWING`)) && msg.includes('Od: Anna Nowak') && msg.includes('Do: Jan Testowy') && msg.includes('załączniki'), msg);
 check('message: body is text, nothing executed', (await js(`window.pwned === undefined && !document.querySelector('main img, main script') && !document.querySelector('main').innerText.includes('pwned')`)) &&
   (await js(`document.querySelector('main .rich a')?.href`)) === 'https://example.com/x');
+// A break in the markup's source is no blank line; an empty paragraph is no line; a list keeps its bullets, a table its cells apart.
+check('message: markup read as a page shows it', (await js(`document.querySelector('main .rich').textContent`)) === 'Dzien dobry,\nszczegoly: https://example.com/x\n\n• zgoda\n• wplata\n\nData · 12.11',
+  await js(`document.querySelector('main .rich').textContent`));
 await shot('9-message');
 await clickText('main a', 'Wiadomości');
 await until(`!document.querySelector('nav.tabs .badge')`);
@@ -956,6 +967,17 @@ check('settings: the marks of attendance start red, green, blue and yellow, take
   JSON.stringify(repainted) === JSON.stringify(['g5:u', 'g1:sp', 'g1:nb']) && tonePicked === 'g1' && tonesBack && (await js(`localStorage.getItem('attendance-tone/2')`)) === null &&
   !(await js(hasButton('Przywróć domyślne'))), { tonesWere, repainted, tonePicked, tonesBack });
 
+// A subject's color: picked in the settings, worn by its lessons in the plan, and back to its own.
+await go('#/ustawienia', `!!document.querySelector('main [aria-labelledby="hue-5"] .chip.hue')`);
+const hueOwn = await js(`document.querySelector('main [aria-labelledby="hue-5"] .auto').style.getPropertyValue('--hue')`);
+await js(`document.querySelector('main [aria-labelledby="hue-5"] button[aria-label="różowy"]').click()`);
+await go('#/plan', `!!document.querySelector('main .lesson')`);
+const huesInPlan = await js(`[...document.querySelectorAll('main .lesson')].map((l) => l.style.getPropertyValue('--hue'))`);
+await go('#/ustawienia', `!!document.querySelector('main [aria-labelledby="hue-5"] .auto')`);
+await js(`document.querySelector('main [aria-labelledby="hue-5"] .auto').click()`);
+check('settings: a subject takes the color picked in the plan, and its own again', huesInPlan.includes('310') && !huesInPlan.includes(hueOwn) &&
+  (await js(`localStorage.getItem('subject-hue/5')`)) === null, { hueOwn, huesInPlan });
+
 await go('#/zadania', `!!document.querySelector('main [role=alert]')`);
 check('premium: a refused paid module is explained once Librus confirms there is no subscription', (await text('main [role=alert]'))[0]?.includes('Mobilnymi Dodatkami') &&
   (await log()).includes('GET /api/s/2002u/Me'), await text('main [role=alert]'));
@@ -987,6 +1009,7 @@ await shot('19-webmail');
 // Writing on that account fills in the site's own form.
 const posted = async (prefix) => JSON.parse((await log()).filter((l) => l.startsWith(prefix)).at(-1)?.slice(prefix.length) ?? 'null');
 await go('#/wiadomosci/6-400', `!!document.querySelector('main article')`);
+check('webmail: a sent message says when it was read', /^przeczytana .*2026.*18:00$/.test((await rows('main .reads li'))[0] ?? ''), await rows('main .reads li'));
 check('webmail: a sent message has no reply form on the site, so none is offered', !(await js(`[...document.querySelectorAll('main a')].some((a) => a.textContent.trim() === 'Odpowiedz')`)));
 await go('#/wiadomosci/nowa', `document.querySelectorAll('.receivers details').length > 0`);
 const webSections = await text('.receivers summary');

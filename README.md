@@ -19,11 +19,12 @@ Hasła nie zapisuje, tokeny trzyma zaszyfrowane.
 - **Oceny:** średnie także wtedy, gdy szkoła ich nie podaje albo wpisuje oceny jako opisowe, przy punktach procent
   zdobytych punktów, przy ocenach procentowych ich średnia, średnia ze wszystkich przedmiotów, symulator "co jeśli
   dostanę 5".
-- **Wiadomości:** czytanie, pisanie i odpowiadanie, załączniki do pobrania, "Oznacz jako przeczytane" z potwierdzeniem.
+- **Wiadomości:** czytanie, pisanie i odpowiadanie, załączniki do pobrania, "Oznacz jako przeczytane" z potwierdzeniem;
+  przy wysłanej przez stronę Synergii, kto i kiedy ją przeczytał.
   Konta bez Mobilnych Dodatków czytają i piszą przez stronę Synergii.
 - **Powiadomienia** (Web Push): zmiany w dzienniku co 10 minut ze szczegółami (ocena i przedmiot, nieobecność i lekcja,
   nadawca i temat wiadomości), szczęśliwy numerek, przerwy. Rodzaje i cisza nocna osobno dla każdego urządzenia.
-- **Ustawienia** na urządzeniu: język (polski, angielski, ukraiński), motyw, widok planu, kolory frekwencji, sposób liczenia średnich, skracanie nazwisk do
+- **Ustawienia** na urządzeniu: język (polski, angielski, ukraiński), motyw, widok planu, kolory frekwencji i przedmiotów, sposób liczenia średnich, skracanie nazwisk do
   zrzutów ekranu.
 - **Na co dzień:** kilku uczniów na jednym koncie, tryb offline z ostatnimi danymi, instalacja na ekranie telefonu.
 

@@ -168,6 +168,16 @@
             <span class="muted">{#if m.to}{t('Do:')} {m.to}<br />{/if}{fmtUnix(m.date)}</span>
           </p>
         </div>
+        {#if m.reads?.length}
+          <ul class="reads">
+            {#each m.reads as r, i (i)}
+              <li class:muted={!r.at}>
+                <Icon name={r.at ? 'check' : 'close'} size={16} />
+                {m.reads.length > 1 ? `${r.who}: ` : ''}{r.at ? t('przeczytana {date}', { date: fmtUnix(r.at) }) : t('nieprzeczytana')}
+              </li>
+            {/each}
+          </ul>
+        {/if}
         <Rich text={m.body} />
         {#if m.files.length}
           <Files link={(f) => (fromWeb(id) ? fileLink(login, id, f) : synergia(login, `Messages/Attachment/${id}-${f.Id}`))} files={m.files} />

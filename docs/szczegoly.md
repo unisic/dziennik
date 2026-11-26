@@ -84,6 +84,12 @@ parsuje. Działa czytanie obu folderów, pojedynczych wiadomości, załączniki,
 i odpowiadanie: przeglądarka wypełnia formularz strony (`wiadomosci/2/5` albo `wiadomosci/3/5/<id>`, odbiorcy z
 `getRecipients`), a serwer go wysyła. Odpowiedzi strony na formularz aplikacja nie czyta: wiadomość uznaje za wysłaną
 dopiero wtedy, gdy pojawi się w folderze "Wysłane", a jeśli się nie pojawi, mówi o tym i niczego nie ponawia.
+Wysłana wiadomość otwarta ze strony pokazuje pod odbiorcami, kto i kiedy ją przeczytał ("przeczytana 3 lis 2026,
+18:00" albo "nieprzeczytana"), z tabeli "Przeczytano" tej strony. Przez API (konta z Mobilnymi Dodatkami) tego nie ma:
+nie wiadomo, co Librus podaje w `ReadDates` wysłanej wiadomości.
+Treść wiadomości jest tekstem, jak strona by ją pokazała: w HTML-u znak nowej linii w źródle to spacja (więc `<br />`
+z nową linią daje jedną przerwę, nie pustą linię), akapit ma odstęp, pusty akapit (`&nbsp;`) znika, punkt listy dostaje
+"• ", a komórki tabeli " · ". Tekst bez znaczników zostaje z własnymi liniami (`plain` w `web/src/util.js`).
 Ograniczenia: jedna wiadomość trafia do osób z jednej grupy (tak działa formularz strony), bez grupy "Grupa
 adresatów", bez załączników, bez cytatu w odpowiedzi; z folderu widać tylko pierwszą stronę. Zadania domowe takiego
 konta: sam komunikat.
@@ -219,7 +225,9 @@ Start), motyw (`theme`: systemowy, jasny albo ciemny) i widok planu (`plan-view`
 ten sam klucz zapisuje przełącznik w planie) oraz kolory znaczków frekwencji (`attendance-tone/<rodzaj>`):
 nieusprawiedliwione są czerwone, usprawiedliwione zielone, spóźnienia niebieskie, zwolnienia żółte, a każdy rodzaj
 można przestawić na jeden z siedmiu odcieni aplikacji (skala ocen i niebieski, z gotowym kontrastem w obu motywach)
-albo wrócić do domyślnych; rodzaje wpisów dodane przez szkołę zostają szare. Wybrany motyw nie trzyma drugiej kopii kolorów: `applyTheme` w
+albo wrócić do domyślnych; rodzaje wpisów dodane przez szkołę zostają szare. "Kolory przedmiotów" (przedmioty z
+`Lessons` wybranego ucznia) dają każdemu przedmiotowi jeden z 10 odcieni planu (`subject-hue/<id przedmiotu>`) albo
+jego własny, z przerywaną obwódką; plan i start biorą go w `hue` w `web/src/Lessons.svelte`. Wybrany motyw nie trzyma drugiej kopii kolorów: `applyTheme` w
 `web/src/util.js` zmienia warunek bloku `prefers-color-scheme: dark` w arkuszu na "zawsze" albo "nigdy", a za nim idą
 `color-scheme` i kolor paska przeglądarki. `theme_color` w manifeście to celowo tło ciemnego
 motywu: Chrome na Androidzie maluje nim pasek nawigacji zainstalowanej aplikacji, kolor ustala raz, przy instalacji, i

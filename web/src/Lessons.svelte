@@ -1,6 +1,6 @@
 <script module>
   import { clock } from './api.svelte.js';
-  import { named } from './util.js';
+  import { named, HUE_KEY, HUES } from './util.js';
   import { t } from './i18n.js';
 
   /**
@@ -25,8 +25,19 @@
 
   export const teacher = (u) => (u ? named(u.FirstName, u.LastName) : '');
 
+  /** A subject's hue as picked in "Ustawienia"; one not on the list (or none) leaves the hue it gets. */
+  function picked(s) {
+    try {
+      const h = Number(localStorage.getItem(HUE_KEY + s?.Id));
+      return HUES.some(([x]) => x === h) ? h : null;
+    } catch {
+      return null;
+    }
+  }
+
   /** A subject's hue, the same on every day: its id spread round the wheel by the golden angle, squeezed short of red (a cancellation's). */
-  export function hue(s) {
+  export function hue(s, own = true) {
+    if (own && picked(s) != null) return picked(s);
     const n = Number(s?.Id);
     const k = Number.isFinite(n) ? n : [...String(s?.Name ?? '')].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 997, 0);
     return Math.round(25 + (((k * 137.508) % 360) * 5) / 6);

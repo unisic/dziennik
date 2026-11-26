@@ -79,6 +79,10 @@ export async function message(login, key) {
     title: field('Temat') || t('(bez tematu)'),
     from: surnameFirst(field('Nadawca')),
     to: readers.map((tr) => surnameFirst(text(tr.cells[0]))).filter(Boolean).join(', '),
+    // Each recipient's second cell: when they read it, or "NIE".
+    reads: readers
+      .filter((tr) => text(tr.cells[0]))
+      .map((tr) => ({ who: surnameFirst(text(tr.cells[0])), at: /^\d{4}-\d\d-\d\d/.test(text(tr.cells[1])) ? unix(text(tr.cells[1])) : null })),
     date: unix(field('Wysłano')),
     body: plain(doc.querySelector('.container-message-content')?.innerHTML ?? ''),
     files: [...doc.querySelectorAll('img[onclick*="pobierz_zalacznik"]')].map((img) => ({

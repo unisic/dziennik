@@ -1,7 +1,9 @@
 <script>
-  import { api, session, message, clearApiCache } from './api.svelte.js';
+  import { api, session, message, clearApiCache, lookup, resource, byId } from './api.svelte.js';
   import { disable as disablePush } from './push.js';
-  import { stored, choiceOf, applyTheme, short, mail, FORCED_KEY, SHORT_KEY, TOUR_KEY, PLUS, MINUS, YEAR, PLAN, THEME, TONES, ATTENDANCE } from './util.js';
+  import { stored, choiceOf, applyTheme, short, mail, FORCED_KEY, SHORT_KEY, TOUR_KEY, PLUS, MINUS, YEAR, PLAN, THEME, TONES, ATTENDANCE, HUE_KEY, HUES } from './util.js';
+  import { hue } from './Lessons.svelte';
+  import Async from './Async.svelte';
   import Icon from './Icon.svelte';
   import Install from './Install.svelte';
   import Lang from './Lang.svelte';
@@ -11,7 +13,7 @@
    * Every switch and choice of the app that is kept on this device (util.js), then what is done with the app and the
    * account. `logout` and `issues` (the bug report form) are App's: its sidebar and "Więcej" use them too.
    */
-  let { logout, issues } = $props();
+  let { logout, issues, login } = $props();
   const forced = stored(FORCED_KEY);
   let plus = $state(choiceOf(PLUS));
   let minus = $state(choiceOf(MINUS));
@@ -21,6 +23,26 @@
   /** The tint of each kind of attendance mark, by the kind's id. */
   let tones = $state(Object.fromEntries([...ATTENDANCE].map(([std, kind]) => [std, choiceOf(kind)])));
   const comma = (v) => Number(v).toLocaleString(locale);
+
+  /** The class's subjects, from its lessons, by name; each with the hue picked for it, or null for its own. */
+  async function subjects(login) {
+    const [ls, s] = await Promise.all([lookup(login, 'Lessons'), lookup(login, 'Subjects')]);
+    const names = byId(s.Subjects ?? []);
+    const ids = [...new Set((ls.Lessons ?? []).map((l) => String(l.Subject?.Id)).filter((id) => names.has(id)))];
+    return ids.map((Id) => ({ Id, name: names.get(Id).Name })).sort((p, q) => p.name.localeCompare(q.name, 'pl'));
+  }
+  const classSubjects = resource(() => (login ? subjects(login) : Promise.resolve([])), () => (login ? `subjects/${login}` : undefined));
+  /** Bumped by a pick, so the swatches read their choice again. */
+  let hues = $state(0);
+  function pickHue(id, h) {
+    try {
+      if (h == null) localStorage.removeItem(HUE_KEY + id);
+      else localStorage.setItem(HUE_KEY + id, String(h));
+      hues++;
+    } catch {
+      // Without storage the pick cannot be kept; the swatches stay as they were.
+    }
+  }
 
   /** Writes the switch; without storage it cannot be kept, so the box goes back to what holds. */
   function keep(key, box) {
@@ -112,6 +134,33 @@
     {/if}
   </p>
 </section>
+
+{#if login}
+  <section class="card">
+    <h2>{t('Kolory przedmiotów')}</h2>
+    <Async r={classSubjects} empty={t('Brak przedmiotów.')}>
+      {#snippet children(list)}
+        {#each list as s (s.Id)}
+          {@const own = (hues, hue(s))}
+          {@const set = own !== hue(s, false)}
+          <h3 class="section" id="hue-{s.Id}">{s.name}</h3>
+          <div class="swatches" role="group" aria-labelledby="hue-{s.Id}">
+            <button class="chip hue auto" style:--hue={hue(s, false)} aria-pressed={!set} aria-label={t('Automatycznie')} title={t('Automatycznie')} onclick={() => pickHue(s.Id, null)}></button>
+            {#each HUES as [h, name] (h)}
+              <button class="chip hue" style:--hue={h} aria-pressed={set && own === h} aria-label={name} title={name} onclick={() => pickHue(s.Id, h)}></button>
+            {/each}
+          </div>
+        {/each}
+        <p class="muted">
+          {t('Kolor lekcji w planie. Pierwszy, z kreską, to kolor, który przedmiot dostaje sam.')}
+          {#if (hues, list.some((s) => hue(s) !== hue(s, false)))}
+            <button class="link" onclick={() => list.forEach((s) => pickHue(s.Id, null))}>{t('Przywróć domyślne')}</button>
+          {/if}
+        </p>
+      {/snippet}
+    </Async>
+  </section>
+{/if}
 
 <section class="card">
   <h2>{t('Średnie ocen')}</h2>

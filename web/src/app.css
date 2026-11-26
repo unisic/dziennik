@@ -2230,6 +2230,16 @@ button.chip {
   box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink);
 }
 
+/* A subject's hue as a lesson wears it; the one it gets by itself has a dashed edge. */
+.chip.hue {
+  background: hsl(var(--hue) var(--tint));
+  border: 3px solid hsl(var(--hue) var(--tint-edge));
+}
+
+.chip.hue.auto {
+  border-style: dashed;
+}
+
 /* Under the chips, not under the label: the label column is 6.5em of 0.875rem. */
 .detail {
   margin: 0 0 var(--space-3) calc(6.5 * 0.875rem + var(--space-3));
@@ -2763,6 +2773,22 @@ details.done summary > strong {
 
 .message .meta p {
   margin: 0;
+}
+
+/* A sent message: whether each recipient has read it, under who it went to. */
+.message .reads {
+  display: grid;
+  gap: 2px;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+}
+
+.message .reads li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
 }
 
 .message .rich {

@@ -334,7 +334,7 @@
           <p class="center muted">{t('Zalogowano jako {email}', { email: mail(session.me.email) })}</p>
           <button class="secondary wide" onclick={logout}><Icon name="logout" size={20} />{t('Wyloguj')}</button>
         {:else if route.page === 'ustawienia'}
-          <Settings {logout} issues={ISSUES} />
+          <Settings {logout} issues={ISSUES} login={accounts.length ? login : null} />
         {:else if PAGES[route.page].global}
           <View />
         {:else if !accounts.length}
